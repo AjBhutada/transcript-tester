@@ -20,8 +20,10 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+    - name: Install dependencies
+  run: |
+    pip install -r requirements.txt
+    pip install yt-dlp
 
       - name: Run script
         run: python script.py "${{ github.event.inputs.url }}"  
