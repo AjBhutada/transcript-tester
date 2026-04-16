@@ -1,32 +1,43 @@
-from youtube_transcript_api import YouTubeTranscriptApi
+import subprocess
 import sys
+import os
 
-def extract_video_id(url):
-    if "youtu.be" in url:
-        return url.split("/")[-1].split("?")[0]
-    elif "youtube.com" in url:
-        return url.split("v=")[-1].split("&")[0]
-    return None
+def parse_vtt(file_path):
+    text = ""
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            if "-->" not in line and line.strip() and not line.startswith("WEBVTT"):
+                text += line.strip() + " "
+    return text
 
 def main():
     url = sys.argv[1]
-    video_id = extract_video_id(url)
-
-    if not video_id:
-        print("❌ Invalid URL")
-        return
 
     try:
-        # NEW METHOD (FIXED)
-        transcript = YouTubeTranscriptApi().fetch(video_id)
+        print("🔄 Downloading subtitles using yt-dlp...\n")
 
-        text = " ".join([t.text for t in transcript])
+        subprocess.run([
+            "yt-dlp",
+            "--write-auto-subs",
+            "--sub-lang", "en",
+            "--skip-download",
+            "--convert-subs", "vtt",
+            url
+        ], check=True)
 
-        print("\n✅ TRANSCRIPT SUCCESS\n")
-        print(text[:2000])
+        # find subtitle file
+        for file in os.listdir():
+            if file.endswith(".vtt"):
+                text = parse_vtt(file)
+
+                print("\n✅ TRANSCRIPT SUCCESS\n")
+                print(text[:2000])
+                return
+
+        print("\n❌ No subtitle file found")
 
     except Exception as e:
-        print("\n❌ FAILED TO FETCH TRANSCRIPT\n")
+        print("\n❌ FAILED")
         print(e)
 
 if __name__ == "__main__":
