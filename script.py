@@ -17,8 +17,10 @@ def main():
         return
 
     try:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'hi'])
-        text = " ".join([t['text'] for t in transcript])
+        # NEW METHOD (FIXED)
+        transcript = YouTubeTranscriptApi().fetch(video_id)
+
+        text = " ".join([t.text for t in transcript])
 
         print("\n✅ TRANSCRIPT SUCCESS\n")
         print(text[:2000])
