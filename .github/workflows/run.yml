@@ -1,29 +1,36 @@
-name: Transcript Test
+name: Concall Bot
 
 on:
+  schedule:
+    - cron: '30 6 * * *'   # 12 PM India
   workflow_dispatch:
-    inputs:
-      url:
-        description: "YouTube Link"
-        required: true
 
 jobs:
-  run:
+  run-script:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: '3.11'
 
-    - name: Install dependencies
-  run: |
-    pip install -r requirements.txt
-    pip install yt-dlp
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
 
       - name: Run script
-        run: python script.py "${{ github.event.inputs.url }}"  
+        run: |
+          python script.py
+
+      # 🔥 NEW STEP (IMPORTANT)
+      - name: Commit transcripts
+        run: |
+          git config --global user.name "bot"
+          git config --global user.email "bot@github.com"
+          git add .
+          git commit -m "Daily transcripts update" || echo "No changes"
+          git push
