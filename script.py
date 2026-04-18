@@ -4,12 +4,15 @@ import re
 import json
 from datetime import datetime, timedelta
 
-# 🔹 CHANNEL URL
+# 🔹 CHANNEL
 CHANNEL_URL = "https://www.youtube.com/channel/UC-DOmbcVPfd36RTj335YMlA/videos"
+
+# 🔹 CREATE FOLDER
+os.makedirs("transcripts", exist_ok=True)
 
 print("🔍 Fetching latest 40 videos...\n")
 
-# 🔹 GET LATEST 40 VIDEOS
+# 🔹 FETCH VIDEOS
 result = subprocess.run(
     [
         "yt-dlp",
@@ -21,35 +24,38 @@ result = subprocess.run(
     text=True
 )
 
-cutoff = datetime.now() - timedelta(days=1)
+# 🔹 TIME FILTER (48H SAFE)
+cutoff = datetime.utcnow() - timedelta(days=2)
+
 videos = []
 
-# 🔹 FILTER LAST 24 HOURS
 for line in result.stdout.split("\n"):
     if not line.strip():
         continue
 
     try:
         data = json.loads(line)
+
         upload_date = data.get("upload_date")
+        if not upload_date:
+            continue
 
-        if upload_date:
-            video_time = datetime.strptime(upload_date, "%Y%m%d")
+        video_time = datetime.strptime(upload_date, "%Y%m%d")
 
-            if video_time >= cutoff:
-                video_id = data["id"]
-                url = f"https://youtu.be/{video_id}"
-                videos.append(url)
+        if video_time >= cutoff:
+            video_id = data["id"]
+            url = f"https://youtu.be/{video_id}"
+            videos.append(url)
 
     except:
         continue
 
 videos = list(set(videos))
 
-print(f"📊 Found {len(videos)} videos in last 24 hours\n")
+print(f"📊 Found {len(videos)} videos in last 48 hours\n")
 
 
-# 🔹 CLEAN TRANSCRIPT FUNCTION
+# 🔹 CLEAN TRANSCRIPT
 def parse_vtt(file_path):
     lines = []
 
@@ -78,7 +84,7 @@ def parse_vtt(file_path):
     return " ".join(cleaned)
 
 
-# 🔹 PROCESS VIDEOS
+# 🔹 PROCESS EACH VIDEO
 for url in videos:
     print(f"\n🚀 Processing: {url}")
 
@@ -108,9 +114,11 @@ for url in videos:
     # 🔹 CLEAN FILE NAME
     file_name = subtitle_file.replace(".en.vtt", "").replace(" ", "_")
 
-    with open(file_name + ".txt", "w", encoding="utf-8") as f:
+    save_path = f"transcripts/{file_name}.txt"
+
+    with open(save_path, "w", encoding="utf-8") as f:
         f.write(transcript)
 
-    print(f"✅ Saved: {file_name}.txt")
+    print(f"✅ Saved: {save_path}")
 
-print("\n🔥 DONE: Last 24h transcripts extracted")
+print("\n🔥 DONE: Transcripts extracted")
